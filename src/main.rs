@@ -21,9 +21,19 @@ fn read_maps(pid: u32) -> Result<String, io::Error> {
     read_to_string(format!("/proc/{}/maps", pid))
 }
 
+fn read_pagemap(pid: u32) -> Result<String, io::Error> {
+    read_to_string(format!("/proc/{}/pagemap", pid))
+}
+
+fn take_snapshot(pid: u32) {
+    unsafe {
+        libc::kill(pid as i32, libc::SIGSTOP);
+    }
+    let parsed_maps = parse_maps(&read_maps(pid).unwrap()).unwrap(); // FIXME: cringe unwraps
+    // parse pagemap
+}
+
 fn main() {
     let proc_name = get_proc_from_cli();
-    println!("{}", process::id());
-    let maps = read_maps(process::id());
-    let parsed_maps = parse_maps(&maps.unwrap()).unwrap().1;
+    take_snapshot(process::id());
 }
