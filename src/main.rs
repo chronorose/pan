@@ -3,6 +3,8 @@ use std::env::args;
 use std::fs::{File, read_to_string};
 use std::io;
 use std::process::Command;
+use std::thread::sleep;
+use std::time::Duration;
 
 use crate::parse_maps::{Mapping, parse_maps};
 use crate::parse_pagemap::{Page, parse_mapping};
@@ -41,16 +43,17 @@ impl ProcessStopper {
 }
 
 impl Drop for ProcessStopper {
-    fn drop(&mut self) {}
+    fn drop(&mut self) {
+        unsafe {
+            libc::kill(self.pid as i32, libc::SIGCONT);
+        }
+    }
 }
 
 type PageMap = (Mapping, Vec<Page>);
 
 fn take_snapshot(pid: u32) -> Vec<PageMap> {
-    // ProcessStopper::new(pid);
-    unsafe {
-        libc::kill(pid as i32, libc::SIGSTOP);
-    }
+    ProcessStopper::new(pid);
     let (_, parsed_maps) = parse_maps(&read_maps(pid).unwrap()).unwrap(); // FIXME: cringe unwraps
 
     let mut pagemap = File::open(format!("/proc/{}/pagemap", pid)).unwrap();
@@ -60,11 +63,6 @@ fn take_snapshot(pid: u32) -> Vec<PageMap> {
         .filter(|m| !(m.pathname.starts_with("[") || m.pathname.is_empty()))
         .map(|mapping| parse_mapping(&mut pagemap, mapping))
         .collect();
-
-    unsafe {
-        libc::kill(pid as i32, libc::SIGCONT);
-    }
-
     pm
 }
 
@@ -77,7 +75,7 @@ fn print_stats(pm: PageMap) {
     let not_present_pages = total - present_pages;
 
     println!(
-        "Pathname {} has mapped {} pages in total.",
+        "Pathname {} has mapped {} page(s) in total.",
         pm.0.pathname, total,
     );
 
@@ -103,6 +101,7 @@ fn main() {
         .args(&proc[1..proc.len()])
         .spawn()
         .unwrap();
+
     let snapshot = take_snapshot(child.id());
     for pm in snapshot {
         print_stats(pm);
