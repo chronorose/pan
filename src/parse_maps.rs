@@ -8,7 +8,7 @@ use nom::sequence::separated_pair;
 use nom::{IResult, character::complete::hex_digit1};
 
 // TODO: encode efficiently
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Perms {
     read: bool,
     write: bool,
@@ -29,16 +29,25 @@ impl Perms {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Mapping {
     address_start: u64,
     address_end: u64,
     perms: Perms,
     offset: u64,
-    pathname: String,
+    pub pathname: String,
 }
 
 impl Mapping {
+    pub fn address_range(&self) -> u64 {
+        self.address_end - self.address_start
+    }
+    pub fn address_start(&self) -> u64 {
+        self.address_start
+    }
+    pub fn address_end(&self) -> u64 {
+        self.address_end
+    }
     fn new(addresses: (u64, u64), perms: Perms, offset: u64, pathname: String) -> Self {
         Mapping {
             address_start: addresses.0,
