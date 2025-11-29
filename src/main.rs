@@ -3,8 +3,6 @@ use std::env::args;
 use std::fs::{File, read_to_string};
 use std::io;
 use std::process::Command;
-use std::thread::sleep;
-use std::time::Duration;
 
 use crate::parse_maps::{Mapping, parse_maps};
 use crate::parse_pagemap::{Page, parse_mapping};
@@ -23,10 +21,6 @@ fn get_proc_from_cli() -> Option<String> {
 
 fn read_maps(pid: u32) -> Result<String, io::Error> {
     read_to_string(format!("/proc/{}/maps", pid))
-}
-
-fn read_pagemap(pid: u32) -> Result<String, io::Error> {
-    read_to_string(format!("/proc/{}/pagemap", pid))
 }
 
 struct ProcessStopper {
@@ -67,9 +61,6 @@ fn take_snapshot(pid: u32) -> Vec<PageMap> {
 }
 
 fn print_stats(pm: PageMap) {
-    if pm.0.pathname.is_empty() {
-        return;
-    }
     let total = pm.1.len();
     let present_pages = pm.1.iter().filter(|page| page.present).count();
     let not_present_pages = total - present_pages;
