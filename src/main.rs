@@ -98,7 +98,11 @@ fn print_stats(pm: PageMap) {
 
 fn main() {
     let proc_name = get_proc_from_cli().unwrap();
-    let mut child = Command::new(proc_name).spawn().unwrap();
+    let proc: Vec<&str> = proc_name.split(" ").collect();
+    let mut child = Command::new(proc[0])
+        .args(&proc[1..proc.len()])
+        .spawn()
+        .unwrap();
     let snapshot = take_snapshot(child.id());
     for pm in snapshot {
         print_stats(pm);
