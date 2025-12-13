@@ -1,14 +1,19 @@
-use libc;
 use std::env::args;
-use std::fs::{File, read_to_string};
+use std::fs::read_to_string;
 use std::io;
 use std::process::Command;
+use std::thread::sleep;
+use std::time::Duration;
 
-use crate::parse_maps::{Mapping, parse_maps};
-use crate::parse_pagemap::{Page, parse_mapping};
+use crate::pages_snapshot::take_snapshot;
+use crate::parse_maps::Mapping;
+use crate::parse_pagemap::Page;
+use crate::process_manipulation::ChildProcess;
 
+mod pages_snapshot;
 mod parse_maps;
 mod parse_pagemap;
+mod process_manipulation;
 
 fn get_proc_from_cli() -> Option<String> {
     let args: Vec<_> = args().collect();
@@ -23,42 +28,7 @@ fn read_maps(pid: u32) -> Result<String, io::Error> {
     read_to_string(format!("/proc/{}/maps", pid))
 }
 
-struct ProcessStopper {
-    pid: u32,
-}
-
-impl ProcessStopper {
-    fn new(pid: u32) -> ProcessStopper {
-        unsafe {
-            libc::kill(pid as i32, libc::SIGSTOP);
-        }
-        ProcessStopper { pid }
-    }
-}
-
-impl Drop for ProcessStopper {
-    fn drop(&mut self) {
-        unsafe {
-            libc::kill(self.pid as i32, libc::SIGCONT);
-        }
-    }
-}
-
 type PageMap = (Mapping, Vec<Page>);
-
-fn take_snapshot(pid: u32) -> Vec<PageMap> {
-    ProcessStopper::new(pid);
-    let (_, parsed_maps) = parse_maps(&read_maps(pid).unwrap()).unwrap(); // FIXME: cringe unwraps
-
-    let mut pagemap = File::open(format!("/proc/{}/pagemap", pid)).unwrap();
-
-    let pm = parsed_maps
-        .into_iter()
-        .filter(|m| !(m.pathname.starts_with("[") || m.pathname.is_empty()))
-        .map(|mapping| parse_mapping(&mut pagemap, mapping))
-        .collect();
-    pm
-}
 
 fn print_stats(pm: PageMap) {
     let total = pm.1.len();
@@ -88,15 +58,12 @@ fn print_stats(pm: PageMap) {
 fn main() {
     let proc_name = get_proc_from_cli().unwrap();
     let proc: Vec<&str> = proc_name.split(" ").collect();
-    let mut child = Command::new(proc[0])
-        .args(&proc[1..proc.len()])
-        .spawn()
-        .unwrap();
-
-    let snapshot = take_snapshot(child.id());
+    let mut cmd = Command::new(proc[0]);
+    cmd.args(&proc[1..proc.len()]);
+    let ps = ChildProcess::new(cmd).unwrap();
+    let snapshot = take_snapshot(&ps);
     for pm in snapshot {
         print_stats(pm);
         println!();
     }
-    child.kill().unwrap();
 }
