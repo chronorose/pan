@@ -2,8 +2,6 @@ use std::env::args;
 use std::fs::read_to_string;
 use std::io;
 use std::process::Command;
-use std::thread::sleep;
-use std::time::Duration;
 
 use crate::pages_snapshot::take_snapshot;
 use crate::parse_maps::Mapping;

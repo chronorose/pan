@@ -1,4 +1,4 @@
-use std::{fs::File, thread::sleep, time::Duration};
+use std::fs::File;
 
 use crate::{
     PageMap,
@@ -10,7 +10,7 @@ use crate::{
 
 pub fn take_snapshot<Ps: Process>(ps: &Ps) -> Vec<PageMap> {
     let pid = ps.pid();
-    let pstopper = ProcessStopper::new(ps);
+    let _pstopper = ProcessStopper::new(ps);
     let maps = read_maps(pid).unwrap();
     let (_, parsed_maps) = parse_maps(&maps).unwrap();
 
