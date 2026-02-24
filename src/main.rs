@@ -1,10 +1,10 @@
-use std::env::args;
 use std::fs::read_to_string;
 use std::io;
 use std::process::Command;
+use std::time::Duration;
+use std::{env::args, thread::sleep};
 
-use crate::process::process::ChildProcess;
-use crate::vm_maps::pages_snapshot::PageMapSnapshot;
+use crate::process::process::{ChildProcess, Process};
 
 mod process;
 mod stats;
@@ -23,7 +23,7 @@ fn main() {
     let mut cmd = Command::new(args[1].clone());
     cmd.args(&args[2..args.len()]);
     let ps = ChildProcess::new(cmd).unwrap();
-    let snapshot = PageMapSnapshot::new(&ps);
-    let desc = stats::pagemap::PageMapStats::stats_description(&snapshot);
+    sleep(Duration::new(0, 5));
+    let desc = stats::pagemap::PageMapStats::stats_description(&ps.snapshot());
     println!("{}", desc);
 }
