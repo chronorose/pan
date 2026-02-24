@@ -8,14 +8,13 @@ use crate::{
     process::process_stopper::ProcessStopper,
     read_maps,
     vm_maps::{
-        pages_snapshot::PageMapSnapshot, proc_pid_maps::parser::parse_maps,
-        proc_pid_pagemap::parser::parse_mapping,
+        proc_pid_maps::parser::parse_maps, proc_pid_pagemap::parser::parse_mapping, vm_maps::VMMaps,
     },
 };
 
 pub trait Process {
     fn pid(&self) -> u32;
-    fn snapshot(&self) -> PageMapSnapshot {
+    fn snapshot(&self) -> VMMaps {
         let pid = self.pid();
         let _pstopper = ProcessStopper::new(self);
         let maps = read_maps(pid).unwrap();
@@ -28,7 +27,7 @@ pub trait Process {
             .filter(|m| m.pathname.is_path())
             .map(|mapping| parse_mapping(&mut pagemap, mapping))
             .collect();
-        PageMapSnapshot { snapshot: pm }
+        VMMaps { snapshot: pm }
     }
 }
 
