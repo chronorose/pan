@@ -60,10 +60,14 @@ pub struct Mapping {
     address_end: u64,
     perms: Perms,
     offset: u64,
-    pub pathname: Pathname,
+    pathname: Pathname,
 }
 
 impl Mapping {
+    pub fn pathname(&self) -> &Pathname {
+        &self.pathname
+    }
+
     pub fn address_range(&self) -> u64 {
         self.address_end - self.address_start
     }

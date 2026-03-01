@@ -4,11 +4,11 @@ pub struct PageMapStats;
 
 impl PageMapStats {
     fn total_pages(pm: &VMMap) -> usize {
-        pm.pagemap.len()
+        pm.pagemap().len()
     }
 
     fn present_pages(pm: &VMMap) -> usize {
-        pm.pagemap.iter().filter(|page| page.present).count()
+        pm.pagemap().iter().filter(|page| page.present).count()
     }
 
     fn dead_pages(pm: &VMMap) -> usize {
@@ -29,7 +29,7 @@ impl PageMapStats {
             "Pathname {} has mapped {} page(s) in total.
             Out of them, present in RAM currently are {}, not present in RAM are {}
             Percentage of present in RAM pages: {}%",
-            pm.maps.pathname,
+            pm.maps().pathname(),
             Self::total_pages(pm),
             Self::present_pages(pm),
             Self::dead_pages(pm),

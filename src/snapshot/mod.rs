@@ -44,7 +44,7 @@ impl VMMapSnapshotter {
     fn validate_mappings(mut pagemap: &mut File, mappings: Vec<Mapping>) -> Vec<VMMap> {
         mappings
             .into_iter()
-            .filter(|m| m.pathname.is_path())
+            .filter(|m| m.pathname().is_path())
             .map(|m| parse_mapping(&mut pagemap, m))
             .collect()
     }
@@ -69,3 +69,4 @@ impl Snapshotter for VMMapSnapshotter {
         VMMaps::new(mappings)
     }
 }
+
