@@ -65,13 +65,13 @@ impl PageMapStats {
         format!(
             "-----------------------------------------------------
 Pathname {} has mapped {} page(s) in total.
-Out of them, present in RAM currently are {}, not present in RAM are {}
-Percentage of present in RAM pages: {}%
+Out of them, present in RAM currently are {}, not loaded are {}
+Percentage of loaded pages: {}%
 
 Sections: 
 {}
 
-Alive symbols:
+Loaded symbols:
 {}
 -----------------------------------------------------",
             pm.maps().pathname(),
