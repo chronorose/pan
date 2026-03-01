@@ -1,5 +1,6 @@
 use crate::vm_maps::{proc_pid_maps::mapping::Mapping, proc_pid_pagemap::page::Page};
 
+#[derive(Clone)]
 pub struct VMMap {
     maps: Mapping,
     pagemap: Vec<Page>,

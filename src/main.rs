@@ -21,6 +21,8 @@ fn main() {
     cmd.args(&args[2..args.len()]);
     let ps = ChildProcess::new(cmd).unwrap();
     sleep(Duration::new(0, 5));
-    let desc = PageMapStats::stats_description(&VMMapSnapshotter::snapshot(&ps));
-    println!("{}", desc);
+    let snapshot = VMMapSnapshotter::snapshot_with(&ps, |snapshot| {
+        let desc = PageMapStats::stats_description(&snapshot);
+        println!("{}", desc);
+    });
 }

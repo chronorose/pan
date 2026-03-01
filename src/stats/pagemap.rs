@@ -1,4 +1,9 @@
-use crate::vm_maps::vm_maps::{VMMap, VMMaps};
+use object::{ObjectSection, ObjectSymbol};
+
+use crate::{
+    symbols,
+    vm_maps::vm_maps::{VMMap, VMMaps},
+};
 
 pub struct PageMapStats;
 
@@ -24,16 +29,58 @@ impl PageMapStats {
         }
     }
 
+    fn sections(pm: &VMMap) -> String {
+        let elf = symbols::elf::Elf::create(pm.clone());
+        assert!(elf.is_some());
+        if let Some(provider) = elf {
+            let sections = provider.get_sections();
+            let section_names: Vec<String> = sections
+                .iter()
+                .map(|s| s.name().unwrap().to_string())
+                .collect();
+            let info = section_names.join("\n");
+            format!("{}", info)
+        } else {
+            "No sections".to_string()
+        }
+    }
+
+    fn present_symbols(pm: &VMMap) -> String {
+        let elf = symbols::elf::Elf::create(pm.clone());
+        assert!(elf.is_some());
+        if let Some(provider) = elf {
+            let symbols = provider.get_loaded_symbols();
+            let symbols_names: Vec<String> = symbols
+                .iter()
+                .map(|s| s.name().unwrap().to_string())
+                .collect();
+            let info = symbols_names.join("\n");
+            format!("{}", info)
+        } else {
+            "No sections".to_string()
+        }
+    }
+
     fn pm_stats_description(pm: &VMMap) -> String {
         format!(
-            "Pathname {} has mapped {} page(s) in total.
-            Out of them, present in RAM currently are {}, not present in RAM are {}
-            Percentage of present in RAM pages: {}%",
+            "-----------------------------------------------------
+Pathname {} has mapped {} page(s) in total.
+Out of them, present in RAM currently are {}, not present in RAM are {}
+Percentage of present in RAM pages: {}%
+
+Sections: 
+{}
+
+Alive symbols:
+{}
+-----------------------------------------------------",
             pm.maps().pathname(),
             Self::total_pages(pm),
             Self::present_pages(pm),
             Self::dead_pages(pm),
-            Self::ram_percentage(pm)
+            Self::ram_percentage(pm),
+            Self::sections(pm),
+            Self::present_symbols(pm)
         )
     }
 

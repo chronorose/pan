@@ -57,9 +57,9 @@ impl Elf {
         self.get_symbols()
             .into_iter()
             .filter(|symbol| {
-                let symbol_addr = symbol.address();
-                let page = (symbol_addr - offset) / Page::page_size();
-                pm.maps().in_offset(symbol_addr) && pages[page as usize].present
+                symbol.address() != 0
+                    && pm.maps().in_offset(symbol.address())
+                    && pages[((symbol.address() - offset) / Page::page_size()) as usize].present
             })
             .collect()
     }

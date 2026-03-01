@@ -20,6 +20,7 @@ pub trait Snapshotter {
     type Output;
 
     fn snapshot(ctx: &Self::Context) -> Self::Output;
+    fn snapshot_with<R>(ctx: &Self::Context, f: impl FnOnce(Self::Output) -> R) -> R;
 }
 
 pub struct VMMapSnapshotter;
@@ -67,6 +68,19 @@ impl Snapshotter for VMMapSnapshotter {
         let mappings = Self::validate_mappings(&mut pm_desc, parsed_maps);
 
         VMMaps::new(mappings)
+    }
+
+    fn snapshot_with<R>(ctx: &Self::Context, f: impl FnOnce(Self::Output) -> R) -> R {
+        let pid = ctx.pid();
+        let _pstopper = ProcessStopper::new(ctx);
+        let maps = Self::maps_contents(pid).unwrap();
+        let (_, parsed_maps) = parse_maps(&maps).unwrap();
+
+        let mut pm_desc = Self::pagemap_descriptor(pid).unwrap();
+
+        let mappings = Self::validate_mappings(&mut pm_desc, parsed_maps);
+
+        f(VMMaps::new(mappings))
     }
 }
 
