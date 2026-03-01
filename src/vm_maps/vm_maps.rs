@@ -12,5 +12,15 @@ impl VMMap {
 }
 
 pub struct VMMaps {
-    pub snapshot: Vec<VMMap>,
+    snapshot: Vec<VMMap>,
+}
+
+impl VMMaps {
+    pub fn new(snapshot: Vec<VMMap>) -> Self {
+        VMMaps { snapshot }
+    }
+
+    pub fn snapshot(&self) -> &Vec<VMMap> {
+        &self.snapshot
+    }
 }

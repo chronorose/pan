@@ -38,7 +38,11 @@ impl PageMapStats {
     }
 
     pub fn stats_description(p: &VMMaps) -> String {
-        let result: Vec<String> = p.snapshot.iter().map(Self::pm_stats_description).collect();
+        let result: Vec<String> = p
+            .snapshot()
+            .iter()
+            .map(Self::pm_stats_description)
+            .collect();
         result.join("\n")
     }
 }

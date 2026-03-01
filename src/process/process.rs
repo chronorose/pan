@@ -1,34 +1,12 @@
 use std::{
-    fs::File,
     io,
     process::{Child, Command},
 };
 
-use crate::{
-    process::process_stopper::ProcessStopper,
-    read_maps,
-    vm_maps::{
-        proc_pid_maps::parser::parse_maps, proc_pid_pagemap::parser::parse_mapping, vm_maps::VMMaps,
-    },
-};
+pub type PID = u32;
 
 pub trait Process {
-    fn pid(&self) -> u32;
-    fn snapshot(&self) -> VMMaps {
-        let pid = self.pid();
-        let _pstopper = ProcessStopper::new(self);
-        let maps = read_maps(pid).unwrap();
-        let (_, parsed_maps) = parse_maps(&maps).unwrap();
-
-        let mut pagemap = File::open(format!("/proc/{}/pagemap", pid)).unwrap();
-
-        let pm = parsed_maps
-            .into_iter()
-            .filter(|m| m.pathname.is_path())
-            .map(|mapping| parse_mapping(&mut pagemap, mapping))
-            .collect();
-        VMMaps { snapshot: pm }
-    }
+    fn pid(&self) -> PID;
 }
 
 pub struct ChildProcess {
@@ -46,17 +24,14 @@ impl Drop for ChildProcess {
         let w = self.ps.try_wait();
         match w {
             Ok(_) => (),
-            Err(err) if err.raw_os_error().unwrap() == 10 => (), // this is the case where all
-            // child processes exited and now
-            // it throws error for some
-            // reason?
+            Err(err) if err.raw_os_error().unwrap() == 10 => (),
             Err(_) => self.ps.kill().unwrap(),
         }
     }
 }
 
 impl Process for ChildProcess {
-    fn pid(&self) -> u32 {
+    fn pid(&self) -> PID {
         self.ps.id()
     }
 }

@@ -8,7 +8,7 @@ use crate::vm_maps::{
 };
 
 pub fn parse_mapping(pagemap: &mut File, m: Mapping) -> VMMap {
-    let range = ((m.address_range() / Page::page_size()) + 1) * 8; // (address / 4096) * 8
+    let range = ((m.address_range() / Page::page_size()) + 1) * 8;
     let start = m.address_start();
     assert!(start % Page::page_size() == 0);
     let starting_page = (start / Page::page_size()) * 8;
