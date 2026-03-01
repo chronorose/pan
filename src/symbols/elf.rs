@@ -3,9 +3,7 @@ use std::fs;
 use object::{File, Object, ObjectSection, ObjectSymbol, Section, Symbol};
 use ouroboros::self_referencing;
 
-use crate::vm_maps::{
-    proc_pid_maps::mapping::Mapping, proc_pid_pagemap::page::Page, vm_maps::VMMap,
-};
+use crate::vm_maps::{proc_pid_pagemap::page::Page, vm_maps::VMMap};
 
 // Cursed module because of how rust works with self-referencing structs.
 //
@@ -13,6 +11,7 @@ use crate::vm_maps::{
 
 #[self_referencing]
 pub struct Elf {
+    map: VMMap,
     data: Vec<u8>,
     #[borrows(data)]
     #[not_covariant]
@@ -20,15 +19,15 @@ pub struct Elf {
 }
 
 impl Elf {
-    fn create(vmm: &VMMap) -> Option<Self> {
+    pub fn create(vmm: VMMap) -> Option<Self> {
         if !vmm.maps().pathname().is_path() {
             return None;
         }
 
         let file = fs::read(vmm.maps().pathname().path()).ok()?;
-        // let obj_file = object::File::parse(bytes).unwrap();
 
         ElfTryBuilder {
+            map: vmm,
             data: file,
             file_builder: |bytes| File::parse(&bytes[..]).map_err(|_| "Object file parsing failed"),
         }
@@ -36,35 +35,32 @@ impl Elf {
         .ok()
     }
 
-    fn get_sections<'a>(&'a self, mapping: &Mapping) -> Option<Vec<Section<'a, 'a>>> {
-        if !mapping.pathname().is_path() {
-            return None;
-        }
+    pub fn get_sections<'a>(&'a self) -> Vec<Section<'a, 'a>> {
+        let mapping = self.borrow_map().maps();
 
-        Some(self.with_file(|file| {
+        self.with_file(|file| {
             file.sections()
                 .filter(|s| mapping.in_offset(s.address()))
                 .collect()
-        }))
+        })
     }
 
-    fn get_loaded_symbols<'a>(&'a self, pm: &VMMap) -> Option<Vec<Symbol<'a, 'a>>> {
-        if !pm.maps().pathname().is_path() {
-            return None;
-        }
+    pub fn get_symbols<'a>(&'a self) -> Vec<Symbol<'a, 'a>> {
+        self.with_file(|file| file.symbols().collect())
+    }
 
+    pub fn get_loaded_symbols<'a>(&'a self) -> Vec<Symbol<'a, 'a>> {
+        let pm = self.borrow_map();
         let pages = pm.pagemap();
         let offset = pm.maps().offset();
-        let symbols: Vec<Symbol> = self.with_file(|file| {
-            file.symbols()
-                .filter(|symbol| {
-                    let symbol_addr = symbol.address();
-                    let page = (symbol_addr - offset) / Page::page_size();
-                    pm.maps().in_offset(symbol_addr) && pages[page as usize].present
-                })
-                .collect()
-        });
 
-        Some(symbols)
+        self.get_symbols()
+            .into_iter()
+            .filter(|symbol| {
+                let symbol_addr = symbol.address();
+                let page = (symbol_addr - offset) / Page::page_size();
+                pm.maps().in_offset(symbol_addr) && pages[page as usize].present
+            })
+            .collect()
     }
 }
