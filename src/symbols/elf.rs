@@ -49,6 +49,14 @@ impl Elf {
         self.with_file(|file| file.symbols().collect())
     }
 
+    pub fn find_symbol<'a>(&'a self, symbol_name: &str) -> Option<Symbol<'a, 'a>> {
+        self.with_file(|file| {
+            file.symbols().find(|symbol| {
+                symbol.name().expect("symbol's name was not utf-8") == symbol_name
+            }) 
+        })
+    }
+
     pub fn get_loaded_symbols<'a>(&'a self) -> Vec<Symbol<'a, 'a>> {
         let pm = self.borrow_map();
         let pages = pm.pagemap();

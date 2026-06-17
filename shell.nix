@@ -3,7 +3,7 @@
 }:
 
 pkgs.mkShell {
-  buildInput = with pkgs; [
+  buildInputs = with pkgs; [
     rustc
     cargo
     rust-analyzer

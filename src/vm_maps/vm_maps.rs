@@ -1,4 +1,6 @@
-use crate::vm_maps::{proc_pid_maps::mapping::Mapping, proc_pid_pagemap::page::Page};
+use std::path::Path;
+
+use crate::vm_maps::{proc_pid_maps::mapping::Mapping, proc_pid_pagemap::page::Page, proc_pid_maps::mapping::Pathname};
 
 #[derive(Clone)]
 pub struct VMMap {
@@ -31,5 +33,14 @@ impl VMMaps {
 
     pub fn snapshot(&self) -> &Vec<VMMap> {
         &self.snapshot
+    }
+
+    pub fn snapshot_of(&self, path: &Path) -> Vec<VMMap> {
+        self.snapshot.clone().into_iter().filter(|vm| {
+            match vm.maps.pathname() {
+                Pathname::Path(snap_path) => snap_path == path.to_str().expect("Path was not utf8"),
+                _ => false
+            }
+        }).collect()
     }
 }

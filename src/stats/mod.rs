@@ -1,1 +1,1 @@
-pub mod pagemap;
+pub mod pagemap_stats;

@@ -2,15 +2,9 @@ use std::process::Command;
 use std::time::Duration;
 use std::{env::args, thread::sleep};
 
-use crate::process::process::ChildProcess;
-use crate::snapshot::{Snapshotter, VMMapSnapshotter};
-use crate::stats::pagemap::PageMapStats;
-
-mod process;
-mod snapshot;
-mod stats;
-mod symbols;
-mod vm_maps;
+use pan::process::process::ChildProcess;
+use pan::snapshot::{Snapshotter, VMMapSnapshotter};
+use pan::stats::pagemap_stats::PageMapStats;
 
 fn main() {
     let args: Vec<_> = args().collect();
